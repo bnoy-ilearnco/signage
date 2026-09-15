@@ -1,6 +1,6 @@
 {
   "settings": {
-    "schoolName": "Your School Name",
+    "schoolName": "Bais Yaakov Hebrew Academy",
     "logoUrl": "",
     "theme": {
       "bg": "#0b1220",
@@ -28,14 +28,30 @@
     }
   ],
   "events": [
-    { "date": "2026-09-20", "time": "7:00 PM", "title": "Open House" }
+    {
+      "date": "2026-09-20",
+      "time": "7:00 PM",
+      "title": "Open House"
+    }
   ],
   "photos": [],
   "schedule": [
-    { "label": "Shacharis", "time": "7:45 AM" },
-    { "label": "Period 1", "time": "8:30 AM" },
-    { "label": "Lunch", "time": "12:15 PM" },
-    { "label": "Dismissal", "time": "4:15 PM" }
+    {
+      "label": "Shacharis",
+      "time": "7:45 AM"
+    },
+    {
+      "label": "Period 1",
+      "time": "8:30 AM"
+    },
+    {
+      "label": "Lunch",
+      "time": "12:15 PM"
+    },
+    {
+      "label": "Dismissal",
+      "time": "4:15 PM"
+    }
   ],
   "ticker": [
     "Welcome to our school",
