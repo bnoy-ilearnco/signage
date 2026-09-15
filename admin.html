@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Signage Admin</title>
+<style>
+  :root{--bg:#0b1220;--panel:#101a2e;--panel2:#0d1526;--accent:#c9a227;--accent2:#e5c766;--text:#eef4fb;--muted:#9fb1c9;--line:rgba(255,255,255,.12);--ok:#2ec18b;--bad:#ff6b6b;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.45;}
+  .wrap{max-width:900px;margin:0 auto;padding:24px 20px 80px;}
+  h1{font-size:26px;margin:0 0 4px;}
+  h1 .a{color:var(--accent2);}
+  .sub{color:var(--muted);margin:0 0 22px;font-size:14px;}
+  h2{font-size:16px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent2);margin:28px 0 10px;border-bottom:1px solid var(--line);padding-bottom:8px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;}
+  label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px;text-transform:uppercase;letter-spacing:.06em;}
+  input,textarea,select{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:9px;color:var(--text);padding:10px 12px;font-size:15px;font-family:inherit;}
+  textarea{min-height:70px;resize:vertical;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+  .rowitem{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;position:relative;}
+  .btn{background:var(--accent);color:#1a1405;border:none;border-radius:10px;padding:11px 18px;font-weight:800;font-size:15px;cursor:pointer;}
+  .btn.sec{background:transparent;color:var(--text);border:1px solid var(--line);font-weight:600;}
+  .btn.sm{padding:7px 12px;font-size:13px;}
+  .btn.danger{background:transparent;border:1px solid var(--bad);color:var(--bad);}
+  .btnrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .del{position:absolute;top:10px;right:10px;}
+  .row-inline{display:flex;gap:10px;align-items:flex-end;}
+  .muted{color:var(--muted);font-size:13px;}
+  a{color:var(--accent2);}
+  #status{position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-top:1px solid var(--line);padding:12px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;}
+  #msg{font-size:14px;}
+  .ok{color:var(--ok);} .bad{color:var(--bad);}
+  .gate{max-width:560px;margin:8vh auto;}
+  .hidden{display:none!important;}
+  .pill{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:12px;color:var(--muted);}
+  .thumb{height:44px;border-radius:6px;border:1px solid var(--line);vertical-align:middle;margin-right:8px;}
+  code{background:var(--panel2);padding:2px 6px;border-radius:6px;font-size:13px;}
+</style>
+</head>
+<body>
+
+<!-- ============ GATE ============ -->
+<div id="gate" class="wrap gate">
+  <h1>Signage <span class="a">Admin</span></h1>
+  <p class="sub">Connect this editor to your GitHub repo. Your token stays in this browser only — it is never committed or shared.</p>
+  <div class="card">
+    <div class="grid2">
+      <div><label>GitHub username / org</label><input id="cfgOwner" placeholder="e.g. bnoy" /></div>
+      <div><label>Repository name</label><input id="cfgRepo" placeholder="e.g. signage" /></div>
+    </div>
+    <div class="grid2">
+      <div><label>Branch</label><input id="cfgBranch" value="main" /></div>
+      <div><label>Content file path</label><input id="cfgPath" value="content.json" /></div>
+    </div>
+    <label>GitHub access token (fine-grained PAT, Contents: read & write on this repo)</label>
+    <input id="cfgToken" type="password" placeholder="github_pat_..." />
+    <p class="muted" style="margin-top:8px">Create one at <a href="https://github.com/settings/personal-access-tokens" target="_blank" rel="noopener">github.com/settings/personal-access-tokens</a> → Fine-grained token → this repo only → Repository permissions → Contents: Read and write.</p>
+    <div class="btnrow" style="margin-top:14px">
+      <button class="btn" id="connectBtn">Connect &amp; load</button>
+      <label style="display:inline-flex;align-items:center;gap:6px;text-transform:none;letter-spacing:0;margin:0;color:var(--text);font-size:14px"><input type="checkbox" id="remember" style="width:auto" checked /> Remember on this device</label>
+    </div>
+    <p id="gateMsg" class="muted" style="margin-top:10px"></p>
+  </div>
+</div>
+
+<!-- ============ EDITOR ============ -->
+<div id="editor" class="wrap hidden">
+  <h1>Signage <span class="a">Admin</span> <span class="pill" id="repoPill"></span></h1>
+  <p class="sub">Edit the board, then <b>Save</b>. All signs pick up changes within a minute. <a id="previewLink" target="_blank" rel="noopener">Open live preview ↗</a></p>
+
+  <h2>School &amp; display settings</h2>
+  <div class="card">
+    <div class="grid2">
+      <div><label>School name</label><input id="s_name" /></div>
+      <div><label>Logo URL (optional)</label><input id="s_logo" placeholder="images/logo.png or full URL" /></div>
+    </div>
+    <div class="grid3">
+      <div><label>Location label</label><input id="s_locLabel" placeholder="Brooklyn, NY" /></div>
+      <div><label>Hebcal geonameid</label><input id="s_geo" placeholder="5110302" /></div>
+      <div><label>Slide seconds</label><input id="s_slide" type="number" min="4" value="12" /></div>
+    </div>
+    <div class="btnrow" style="margin-top:10px">
+      <label style="text-transform:none;letter-spacing:0;margin:0;display:inline-flex;gap:6px;align-items:center"><input id="s_zmanim" type="checkbox" style="width:auto" checked/> Show zmanim</label>
+      <label style="text-transform:none;letter-spacing:0;margin:0;display:inline-flex;gap:6px;align-items:center"><input id="s_ticker" type="checkbox" style="width:auto" checked/> Show ticker</label>
+      <span class="muted">Find a geonameid at <a href="https://www.geonames.org" target="_blank" rel="noopener">geonames.org</a> (search your city, use the ID in the URL).</span>
+    </div>
+  </div>
+
+  <h2>Announcements</h2>
+  <div id="annList"></div>
+  <button class="btn sec sm" onclick="addAnn()">+ Add announcement</button>
+
+  <h2>Upcoming events</h2>
+  <div id="evList"></div>
+  <button class="btn sec sm" onclick="addEv()">+ Add event</button>
+
+  <h2>Photos</h2>
+  <div id="phList"></div>
+  <div class="btnrow">
+    <button class="btn sec sm" onclick="addPhotoUrl()">+ Add photo by URL</button>
+    <label class="btn sec sm" style="text-transform:none;letter-spacing:0;margin:0">+ Upload photo<input type="file" id="phUpload" accept="image/*" class="hidden" /></label>
+    <span class="muted" id="upStatus"></span>
+  </div>
+
+  <h2>Today's schedule</h2>
+  <div id="schList"></div>
+  <button class="btn sec sm" onclick="addSch()">+ Add row</button>
+
+  <h2>Ticker lines</h2>
+  <div class="card"><textarea id="tickerBox" placeholder="One line per row"></textarea></div>
+</div>
+
+<div id="statusBar" class="hidden" >
+  <div id="msg" class="muted">Loaded.</div>
+  <div class="btnrow">
+    <button class="btn sec" id="reloadBtn">Reload</button>
+    <button class="btn" id="saveBtn">Save to all signs</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+const $=id=>document.getElementById(id);
+let cfg={owner:"",repo:"",branch:"main",path:"content.json",token:""};
+let sha=null;            // sha of content.json for updates
+let data=null;
+
+/* ---------- base64 helpers (unicode + binary safe) ---------- */
+function b64EncodeUnicode(str){
+  return btoa(unescape(encodeURIComponent(str)));
+}
+function b64DecodeUnicode(b64){
+  return decodeURIComponent(escape(atob(b64.replace(/\n/g,""))));
+}
+function bufToB64(buf){
+  let bin=""; const bytes=new Uint8Array(buf);
+  for(let i=0;i<bytes.length;i++) bin+=String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+
+/* ---------- GitHub API ---------- */
+function apiBase(){ return `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/`; }
+function ghHeaders(){ return {"Authorization":"Bearer "+cfg.token,"Accept":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"}; }
+
+async function ghGet(path){
+  const r=await fetch(apiBase()+encodeURIComponent(path).replace(/%2F/g,"/")+"?ref="+encodeURIComponent(cfg.branch)+"&t="+Date.now(),{headers:ghHeaders(),cache:"no-store"});
+  if(r.status===404) return null;
+  if(!r.ok) throw new Error("GitHub GET "+r.status+" "+(await r.text()).slice(0,140));
+  return r.json();
+}
+async function ghPut(path, contentB64, message, existingSha){
+  const body={message, content:contentB64, branch:cfg.branch};
+  if(existingSha) body.sha=existingSha;
+  const r=await fetch(apiBase()+encodeURIComponent(path).replace(/%2F/g,"/"),{method:"PUT",headers:ghHeaders(),body:JSON.stringify(body)});
+  if(!r.ok) throw new Error("GitHub PUT "+r.status+" "+(await r.text()).slice(0,140));
+  return r.json();
+}
+
+/* ---------- default content ---------- */
+function blank(){
+  return {settings:{schoolName:"Your School Name",logoUrl:"",theme:{},location:{label:"",geonameid:null,showZmanim:true},slideSeconds:12,showTicker:true},
+    announcements:[],events:[],photos:[],schedule:[],ticker:[]};
+}
+
+/* ---------- gate / connect ---------- */
+function loadCfg(){
+  try{ const s=JSON.parse(localStorage.getItem("signageAdminCfg")||"null"); if(s) cfg=Object.assign(cfg,s); }catch(e){}
+  $("cfgOwner").value=cfg.owner; $("cfgRepo").value=cfg.repo; $("cfgBranch").value=cfg.branch||"main";
+  $("cfgPath").value=cfg.path||"content.json"; $("cfgToken").value=cfg.token||"";
+}
+async function connect(){
+  cfg.owner=$("cfgOwner").value.trim(); cfg.repo=$("cfgRepo").value.trim();
+  cfg.branch=$("cfgBranch").value.trim()||"main"; cfg.path=$("cfgPath").value.trim()||"content.json";
+  cfg.token=$("cfgToken").value.trim();
+  if(!cfg.owner||!cfg.repo||!cfg.token){ $("gateMsg").innerHTML='<span class="bad">Fill in owner, repo, and token.</span>'; return; }
+  $("gateMsg").textContent="Connecting…";
+  try{
+    const res=await ghGet(cfg.path);
+    if(res){ sha=res.sha; data=JSON.parse(b64DecodeUnicode(res.content)); }
+    else { sha=null; data=blank(); }
+    if($("remember").checked) localStorage.setItem("signageAdminCfg", JSON.stringify(cfg));
+    else localStorage.removeItem("signageAdminCfg");
+    openEditor();
+  }catch(e){ $("gateMsg").innerHTML='<span class="bad">'+String(e.message||e)+'</span>'; }
+}
+
+function openEditor(){
+  $("gate").classList.add("hidden");
+  $("editor").classList.remove("hidden");
+  $("statusBar").classList.remove("hidden");
+  $("repoPill").textContent=cfg.owner+"/"+cfg.repo;
+  const base=`https://${cfg.owner}.github.io/${cfg.repo}/`;
+  $("previewLink").href=base;
+  fillForm();
+  setMsg("Loaded"+(sha?"":" (new content.json will be created on save)"),"ok");
+}
+
+/* ---------- form <-> data ---------- */
+function fillForm(){
+  const s=data.settings||{};
+  $("s_name").value=s.schoolName||""; $("s_logo").value=s.logoUrl||"";
+  $("s_locLabel").value=(s.location&&s.location.label)||""; $("s_geo").value=(s.location&&s.location.geonameid)||"";
+  $("s_slide").value=s.slideSeconds||12;
+  $("s_zmanim").checked=!(s.location&&s.location.showZmanim===false);
+  $("s_ticker").checked=s.showTicker!==false;
+  $("annList").innerHTML=""; (data.announcements||[]).forEach(addAnn);
+  $("evList").innerHTML=""; (data.events||[]).forEach(addEv);
+  $("phList").innerHTML=""; (data.photos||[]).forEach(addPhotoRow);
+  $("schList").innerHTML=""; (data.schedule||[]).forEach(addSch);
+  $("tickerBox").value=(data.ticker||[]).join("\n");
+}
+
+function fieldRow(html, listId){
+  const d=document.createElement("div"); d.className="rowitem";
+  d.innerHTML=html+'<button class="btn danger sm del" onclick="this.parentNode.remove()">Remove</button>';
+  $(listId).appendChild(d); return d;
+}
+function addAnn(a){ a=a||{}; fieldRow(
+  `<label>Kicker (small label, optional)</label><input class="k" value="${att(a.kicker)}" placeholder="Welcome / Reminder / Mazal Tov"/>
+   <label>Title</label><input class="t" value="${att(a.title)}"/>
+   <label>Body (optional)</label><textarea class="b">${esc(a.body)}</textarea>
+   <label>Hide after date (optional)</label><input class="u" type="date" value="${att(a.until)}"/>`,"annList"); }
+function addEv(e){ e=e||{}; fieldRow(
+  `<div class="grid3"><div><label>Date</label><input class="d" type="date" value="${att(e.date)}"/></div>
+   <div><label>Time (optional)</label><input class="tm" value="${att(e.time)}" placeholder="7:00 PM"/></div>
+   <div><label>Title</label><input class="t" value="${att(e.title)}"/></div></div>`,"evList"); }
+function addPhotoRow(p){ p=p||{}; const d=fieldRow(
+  `${p.url?`<img class="thumb" src="${att(p.url)}"/>`:""}<label>Image URL</label><input class="url" value="${att(p.url)}"/>
+   <label>Caption (optional)</label><input class="cap" value="${att(p.caption)}"/>`,"phList"); return d; }
+function addPhotoUrl(){ addPhotoRow({}); }
+function addSch(r){ r=r||{}; fieldRow(
+  `<div class="grid2"><div><label>Label</label><input class="l" value="${att(r.label)}" placeholder="Period 1 / Shacharis"/></div>
+   <div><label>Time</label><input class="tm" value="${att(r.time)}" placeholder="8:30 AM"/></div></div>`,"schList"); }
+
+function esc(s){ return String(s==null?"":s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+function att(s){ return String(s==null?"":s).replace(/"/g,"&quot;"); }
+
+function collect(){
+  const out=blank();
+  out.settings.schoolName=$("s_name").value.trim();
+  out.settings.logoUrl=$("s_logo").value.trim();
+  out.settings.slideSeconds=parseInt($("s_slide").value)||12;
+  out.settings.showTicker=$("s_ticker").checked;
+  out.settings.location={label:$("s_locLabel").value.trim(), geonameid:parseInt($("s_geo").value)||null, showZmanim:$("s_zmanim").checked};
+  out.settings.theme=(data.settings&&data.settings.theme)||{};
+  out.announcements=[...$("annList").children].map(r=>({kicker:v(r,".k"),title:v(r,".t"),body:v(r,".b"),until:v(r,".u")})).filter(a=>a.title||a.body);
+  out.events=[...$("evList").children].map(r=>({date:v(r,".d"),time:v(r,".tm"),title:v(r,".t")})).filter(e=>e.title);
+  out.photos=[...$("phList").children].map(r=>({url:v(r,".url"),caption:v(r,".cap")})).filter(p=>p.url);
+  out.schedule=[...$("schList").children].map(r=>({label:v(r,".l"),time:v(r,".tm")})).filter(s=>s.label||s.time);
+  out.ticker=$("tickerBox").value.split("\n").map(x=>x.trim()).filter(Boolean);
+  return out;
+}
+function v(root,sel){ const el=root.querySelector(sel); return el?el.value.trim():""; }
+
+/* ---------- save ---------- */
+async function save(){
+  setMsg("Saving…");
+  try{
+    data=collect();
+    const json=JSON.stringify(data,null,2);
+    const res=await ghPut(cfg.path, b64EncodeUnicode(json), "Update signage content", sha);
+    sha=res.content.sha;
+    setMsg("Saved ✓  Signs update within a minute.","ok");
+  }catch(e){ setMsg(String(e.message||e),"bad"); }
+}
+
+/* ---------- photo upload ---------- */
+async function uploadPhoto(file){
+  if(!file) return;
+  $("upStatus").textContent="Uploading "+file.name+"…";
+  try{
+    const buf=await file.arrayBuffer();
+    const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+    const path="images/"+Date.now()+"_"+safe;
+    await ghPut(path, bufToB64(buf), "Add signage image "+safe, null);
+    addPhotoRow({url:path, caption:""});
+    $("upStatus").innerHTML='<span class="ok">Added '+esc(path)+'. Remember to Save.</span>';
+  }catch(e){ $("upStatus").innerHTML='<span class="bad">'+String(e.message||e)+'</span>'; }
+}
+
+/* ---------- status ---------- */
+function setMsg(t,cls){ const m=$("msg"); m.textContent=t; m.className=cls||"muted"; }
+
+/* ---------- wire up ---------- */
+loadCfg();
+$("connectBtn").addEventListener("click", connect);
+$("saveBtn").addEventListener("click", save);
+$("reloadBtn").addEventListener("click", ()=>location.reload());
+$("phUpload").addEventListener("change", e=>{ uploadPhoto(e.target.files[0]); e.target.value=""; });
+// auto-connect if remembered
+if(cfg.owner && cfg.repo && cfg.token){ connect(); }
+</script>
+</body>
+</html>

@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Signage</title>
+<style>
+  :root{
+    --bg:#0b1220; --panel:#101a2e; --panel2:#0d1526;
+    --accent:#c9a227; --accent2:#e5c766;
+    --text:#eef4fb; --muted:#9fb1c9; --line:rgba(255,255,255,.08);
+    --pad: clamp(16px, 2.2vw, 40px);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    overflow:hidden; height:100vh; width:100vw;
+  }
+  #app{display:grid; grid-template-rows:auto 1fr auto; height:100vh;}
+
+  /* ---- Header ---- */
+  header{
+    display:flex; align-items:center; justify-content:space-between; gap:var(--pad);
+    padding:calc(var(--pad)*.7) var(--pad);
+    background:linear-gradient(180deg,var(--panel),var(--panel2));
+    border-bottom:2px solid var(--accent);
+  }
+  .brand{display:flex; align-items:center; gap:16px; min-width:0;}
+  .brand img{height:clamp(40px,5.2vh,72px); width:auto; border-radius:8px;}
+  .brand .name{font-size:clamp(20px,2.6vw,40px); font-weight:800; letter-spacing:.3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .brand .name .accent{color:var(--accent2);}
+  .clockwrap{text-align:right; line-height:1.1; flex:none;}
+  .clock{font-size:clamp(28px,4.2vw,64px); font-weight:800; font-variant-numeric:tabular-nums;}
+  .gdate{font-size:clamp(13px,1.4vw,22px); color:var(--muted); margin-top:4px;}
+  .hdate{font-size:clamp(13px,1.4vw,22px); color:var(--accent2); margin-top:2px;}
+
+  /* ---- Body: stage + rail ---- */
+  main{display:grid; grid-template-columns:1fr clamp(300px,30vw,520px); min-height:0;}
+  .stage{position:relative; overflow:hidden; padding:var(--pad);}
+  .slide{
+    position:absolute; inset:var(--pad);
+    opacity:0; transition:opacity .8s ease; display:flex; flex-direction:column;
+    justify-content:center;
+  }
+  .slide.active{opacity:1;}
+
+  /* announcement slide */
+  .ann{gap:min(3vh,28px);}
+  .ann .kicker{color:var(--accent2); font-weight:700; letter-spacing:.16em; text-transform:uppercase; font-size:clamp(14px,1.5vw,24px);}
+  .ann .title{font-size:clamp(34px,6vw,104px); font-weight:800; line-height:1.02;}
+  .ann .body{font-size:clamp(20px,2.4vw,42px); color:#dbe6f4; line-height:1.3; max-width:24ch;}
+
+  /* photo slide */
+  .photo{inset:0; padding:0;}
+  .photo .img{position:absolute; inset:0; background-size:cover; background-position:center;}
+  .photo .shade{position:absolute; inset:0; background:linear-gradient(0deg,rgba(4,8,16,.85) 0%,rgba(4,8,16,0) 45%);}
+  .photo .cap{position:absolute; left:var(--pad); right:var(--pad); bottom:var(--pad); font-size:clamp(22px,2.6vw,46px); font-weight:700; text-shadow:0 2px 12px rgba(0,0,0,.6);}
+
+  /* events slide */
+  .events .head{font-size:clamp(24px,3vw,52px); font-weight:800; color:var(--accent2); margin-bottom:min(3vh,26px);}
+  .evlist{display:flex; flex-direction:column; gap:min(2.2vh,20px);}
+  .ev{display:flex; align-items:baseline; gap:20px;}
+  .ev .d{flex:none; width:clamp(96px,10vw,150px); text-align:center; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:8px 6px;}
+  .ev .d .m{font-size:clamp(12px,1.1vw,16px); color:var(--accent2); text-transform:uppercase; letter-spacing:.12em;}
+  .ev .d .n{font-size:clamp(24px,2.8vw,44px); font-weight:800; line-height:1;}
+  .ev .t{font-size:clamp(20px,2.2vw,38px); font-weight:700;}
+  .ev .t small{display:block; color:var(--muted); font-weight:600; font-size:.62em; margin-top:4px;}
+
+  /* ---- Right rail ---- */
+  .rail{background:var(--panel2); border-left:1px solid var(--line); padding:var(--pad); display:flex; flex-direction:column; gap:min(2.6vh,24px); overflow:hidden;}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:clamp(14px,1.5vw,22px);}
+  .card h3{font-size:clamp(15px,1.4vw,22px); color:var(--accent2); text-transform:uppercase; letter-spacing:.14em; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;}
+  .parsha{font-size:clamp(20px,2vw,34px); font-weight:800;}
+  .parsha small{display:block; color:var(--muted); font-weight:600; font-size:.55em; margin-top:6px;}
+  .rows{display:flex; flex-direction:column;}
+  .row{display:flex; justify-content:space-between; align-items:baseline; padding:clamp(6px,.8vh,11px) 0; border-bottom:1px solid var(--line); font-size:clamp(15px,1.5vw,24px);}
+  .row:last-child{border-bottom:none;}
+  .row .lbl{color:#d7e2f1;}
+  .row .val{font-weight:700; font-variant-numeric:tabular-nums; color:var(--text);}
+  .rail .grow{flex:1 1 auto; min-height:0; overflow:hidden;}
+
+  /* ---- Ticker ---- */
+  footer{background:var(--accent); color:#1a1405; overflow:hidden; white-space:nowrap;}
+  .ticker{display:inline-block; padding:clamp(8px,1.1vh,14px) 0; font-size:clamp(16px,1.7vw,26px); font-weight:700; will-change:transform; animation:scroll 40s linear infinite;}
+  .ticker span{padding:0 3vw;}
+  .ticker .dot{color:#6b5410;}
+  @keyframes scroll{from{transform:translateX(100vw);} to{transform:translateX(-100%);}}
+
+  .hidden{display:none !important;}
+  /* progress dots */
+  .dots{position:absolute; bottom:calc(var(--pad)*.4); left:0; right:0; display:flex; gap:8px; justify-content:center;}
+  .dots i{width:9px; height:9px; border-radius:50%; background:rgba(255,255,255,.22);}
+  .dots i.on{background:var(--accent2);}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="brand">
+      <img id="logo" alt="" class="hidden" />
+      <div class="name" id="schoolName">School Name</div>
+    </div>
+    <div class="clockwrap">
+      <div class="clock" id="clock">--:--</div>
+      <div class="gdate" id="gdate"></div>
+      <div class="hdate" id="hdate"></div>
+    </div>
+  </header>
+
+  <main>
+    <div class="stage" id="stage">
+      <div class="dots" id="dots"></div>
+    </div>
+    <aside class="rail">
+      <div class="card" id="parshaCard">
+        <h3>This Shabbos</h3>
+        <div class="parsha" id="parsha">—</div>
+      </div>
+      <div class="card grow" id="scheduleCard">
+        <h3>Today's Schedule</h3>
+        <div class="rows" id="schedule"></div>
+      </div>
+      <div class="card grow" id="zmanimCard">
+        <h3>Zmanim <span id="zloc" style="font-size:.7em;color:var(--muted);letter-spacing:0;text-transform:none;"></span></h3>
+        <div class="rows" id="zmanim"></div>
+      </div>
+    </aside>
+  </main>
+
+  <footer><div class="ticker" id="ticker"></div></footer>
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   iLearnCo Signage — display page
+   Reads content.json from the same folder. If it can't be reached,
+   falls back to the embedded default below so the sign is never blank.
+   Hebrew date is computed locally; parsha/zmanim come from Hebcal
+   (cached in localStorage, gracefully hidden if offline).
+   ============================================================ */
+
+const CONTENT_URL = "content.json";
+const CONTENT_REFRESH_MS = 60 * 1000;          // re-check content.json every minute
+const HEBCAL_REFRESH_MS = 6 * 60 * 60 * 1000;  // refresh parsha/zmanim every 6h
+
+const EMBEDDED_DEFAULT = {
+  settings: {
+    schoolName: "Your School Name",
+    logoUrl: "",
+    theme: { bg:"#0b1220", panel:"#101a2e", panel2:"#0d1526", accent:"#c9a227", accent2:"#e5c766", text:"#eef4fb", muted:"#9fb1c9" },
+    location: { label:"Brooklyn, NY", geonameid:5110302, showZmanim:true },
+    slideSeconds: 12,
+    showTicker: true
+  },
+  announcements: [
+    { kicker:"Welcome", title:"Welcome back!", body:"Edit this board from the admin page — announcements, photos, events and schedule." }
+  ],
+  events: [],
+  photos: [],
+  schedule: [
+    { label:"Shacharis", time:"7:45 AM" },
+    { label:"Period 1", time:"8:30 AM" },
+    { label:"Dismissal", time:"4:15 PM" }
+  ],
+  ticker: ["Welcome to our school", "Edit this ticker from the admin page"]
+};
+
+let content = EMBEDDED_DEFAULT;
+let slides = [];
+let slideIdx = 0;
+let slideTimer = null;
+
+/* ---------- utilities ---------- */
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function todayISO(){ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function fmtTime(iso){ try{ return new Date(iso).toLocaleTimeString([], {hour:"numeric", minute:"2-digit"}); }catch(e){ return ""; } }
+
+/* ---------- theme ---------- */
+function applyTheme(t){
+  if(!t) return;
+  const r=document.documentElement.style;
+  const map={bg:"--bg",panel:"--panel",panel2:"--panel2",accent:"--accent",accent2:"--accent2",text:"--text",muted:"--muted"};
+  for(const k in map){ if(t[k]) r.setProperty(map[k], t[k]); }
+}
+
+/* ---------- clock + dates ---------- */
+function tickClock(){
+  const now=new Date();
+  document.getElementById("clock").textContent =
+    now.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
+  document.getElementById("gdate").textContent =
+    now.toLocaleDateString([], {weekday:"long", month:"long", day:"numeric", year:"numeric"});
+  try{
+    const heb = new Intl.DateTimeFormat("he-u-ca-hebrew", {day:"numeric", month:"long", year:"numeric"}).format(now);
+    document.getElementById("hdate").textContent = heb;
+  }catch(e){ document.getElementById("hdate").textContent=""; }
+}
+
+/* ---------- header / branding ---------- */
+function renderHeader(){
+  const s=content.settings||{};
+  document.getElementById("schoolName").innerHTML = esc(s.schoolName||"School Name");
+  const logo=document.getElementById("logo");
+  if(s.logoUrl){ logo.src=s.logoUrl; logo.classList.remove("hidden"); }
+  else logo.classList.add("hidden");
+}
+
+/* ---------- slides (stage) ---------- */
+function monthAbbr(iso){ try{ return new Date(iso+"T00:00").toLocaleDateString([], {month:"short"}).toUpperCase(); }catch(e){ return ""; } }
+function dayNum(iso){ try{ return new Date(iso+"T00:00").getDate(); }catch(e){ return ""; } }
+
+function buildSlides(){
+  const out=[];
+  const today=todayISO();
+  // announcements (skip expired)
+  (content.announcements||[]).forEach(a=>{
+    if(a.until && a.until < today) return;
+    out.push({type:"ann", data:a});
+  });
+  // photos
+  (content.photos||[]).forEach(p=>{ if(p.url) out.push({type:"photo", data:p}); });
+  // events summary slide (upcoming only)
+  const up=(content.events||[]).filter(e=>!e.date || e.date>=today)
+            .sort((a,b)=>(a.date||"").localeCompare(b.date||"")).slice(0,6);
+  if(up.length) out.push({type:"events", data:up});
+
+  if(!out.length) out.push({type:"ann", data:{title:(content.settings&&content.settings.schoolName)||"Welcome"}});
+  return out;
+}
+
+function slideHTML(s){
+  if(s.type==="ann"){
+    const a=s.data;
+    return `<div class="slide ann">
+      ${a.kicker?`<div class="kicker">${esc(a.kicker)}</div>`:""}
+      <div class="title">${esc(a.title||"")}</div>
+      ${a.body?`<div class="body">${esc(a.body)}</div>`:""}
+    </div>`;
+  }
+  if(s.type==="photo"){
+    const p=s.data;
+    return `<div class="slide photo">
+      <div class="img" style="background-image:url('${encodeURI(p.url)}')"></div>
+      <div class="shade"></div>
+      ${p.caption?`<div class="cap">${esc(p.caption)}</div>`:""}
+    </div>`;
+  }
+  if(s.type==="events"){
+    const rows=s.data.map(e=>`<div class="ev">
+        <div class="d"><div class="m">${e.date?esc(monthAbbr(e.date)):""}</div><div class="n">${e.date?esc(String(dayNum(e.date))):"•"}</div></div>
+        <div class="t">${esc(e.title||"")}${e.time?`<small>${esc(e.time)}</small>`:""}</div>
+      </div>`).join("");
+    return `<div class="slide events">
+      <div class="head">Upcoming Events</div>
+      <div class="evlist">${rows}</div>
+    </div>`;
+  }
+  return `<div class="slide"></div>`;
+}
+
+function renderStage(){
+  const stage=document.getElementById("stage");
+  slides=buildSlides();
+  // remove old slide nodes (keep dots)
+  [...stage.querySelectorAll(".slide")].forEach(n=>n.remove());
+  const frag=document.createElement("div");
+  frag.innerHTML=slides.map(slideHTML).join("");
+  [...frag.children].forEach(n=>stage.insertBefore(n,document.getElementById("dots")));
+  // dots
+  const dots=document.getElementById("dots");
+  dots.innerHTML = slides.length>1 ? slides.map(()=>`<i></i>`).join("") : "";
+  slideIdx=0;
+  showSlide(0);
+  restartRotation();
+}
+
+function showSlide(i){
+  const nodes=document.querySelectorAll("#stage .slide");
+  if(!nodes.length) return;
+  slideIdx=(i+nodes.length)%nodes.length;
+  nodes.forEach((n,k)=>n.classList.toggle("active", k===slideIdx));
+  const dots=document.querySelectorAll("#dots i");
+  dots.forEach((d,k)=>d.classList.toggle("on", k===slideIdx));
+}
+
+function restartRotation(){
+  if(slideTimer) clearInterval(slideTimer);
+  const secs=Math.max(4,(content.settings&&content.settings.slideSeconds)||12);
+  if(document.querySelectorAll("#stage .slide").length>1){
+    slideTimer=setInterval(()=>showSlide(slideIdx+1), secs*1000);
+  }
+}
+
+/* ---------- schedule ---------- */
+function renderSchedule(){
+  const el=document.getElementById("schedule");
+  const list=content.schedule||[];
+  document.getElementById("scheduleCard").classList.toggle("hidden", !list.length);
+  el.innerHTML=list.map(r=>`<div class="row"><span class="lbl">${esc(r.label||"")}</span><span class="val">${esc(r.time||"")}</span></div>`).join("");
+}
+
+/* ---------- ticker ---------- */
+function renderTicker(){
+  const s=content.settings||{};
+  const foot=document.querySelector("footer");
+  const items=[...(content.ticker||[])];
+  // also fold short announcements into the ticker
+  (content.announcements||[]).forEach(a=>{ if(a.title) items.push(a.title); });
+  if(!s.showTicker || !items.length){ foot.classList.add("hidden"); return; }
+  foot.classList.remove("hidden");
+  const t=document.getElementById("ticker");
+  const chain=items.map(x=>`<span>${esc(x)}</span>`).join('<span class="dot">◆</span>');
+  t.innerHTML=chain+'<span class="dot">◆</span>'+chain; // duplicate for seamless loop
+}
+
+/* ---------- Hebcal: parsha + zmanim (cached) ---------- */
+async function loadHebcal(){
+  const loc=(content.settings&&content.settings.location)||{};
+  const geo=loc.geonameid;
+  const showZ=loc.showZmanim!==false;
+  document.getElementById("zloc").textContent = loc.label?("· "+loc.label):"";
+  if(!geo){ document.getElementById("zmanimCard").classList.add("hidden"); document.getElementById("parshaCard").classList.add("hidden"); return; }
+
+  const cacheKey="hebcal:"+geo+":"+todayISO();
+  let cached=null;
+  try{ cached=JSON.parse(localStorage.getItem(cacheKey)||"null"); }catch(e){}
+  if(cached){ paintHebcal(cached, showZ); return; }
+
+  const data={};
+  try{
+    const sh=await fetch(`https://www.hebcal.com/shabbat?cfg=json&geonameid=${geo}&M=on&b=18`,{cache:"no-store"}).then(r=>r.json());
+    const par=(sh.items||[]).find(i=>i.category==="parashat");
+    const cndl=(sh.items||[]).find(i=>i.category==="candles");
+    data.parsha = par ? par.title : null;
+    data.candles = cndl ? (cndl.title||"") : null;
+  }catch(e){}
+  try{
+    const zm=await fetch(`https://www.hebcal.com/zmanim?cfg=json&geonameid=${geo}&date=${todayISO()}`,{cache:"no-store"}).then(r=>r.json());
+    data.times = zm.times||null;
+  }catch(e){}
+  try{ localStorage.setItem(cacheKey, JSON.stringify(data)); }catch(e){}
+  paintHebcal(data, showZ);
+}
+
+function paintHebcal(data, showZ){
+  const pc=document.getElementById("parshaCard");
+  if(data && data.parsha){
+    pc.classList.remove("hidden");
+    document.getElementById("parsha").innerHTML =
+      esc(data.parsha) + (data.candles?`<small>${esc(data.candles)}</small>`:"");
+  } else pc.classList.add("hidden");
+
+  const zc=document.getElementById("zmanimCard");
+  const zEl=document.getElementById("zmanim");
+  const t=data&&data.times;
+  if(showZ && t){
+    const pick=[
+      ["alotHaShachar","Alos Hashachar"],["sunrise","Netz (Sunrise)"],
+      ["sofZmanShma","Sof Zman Shma"],["sofZmanTfilla","Sof Zman Tefila"],
+      ["chatzot","Chatzos"],["minchaGedola","Mincha Gedola"],
+      ["plagHaMincha","Plag Hamincha"],["sunset","Shkiah (Sunset)"],
+      ["tzeit85deg","Tzeis Hakochavim"]
+    ];
+    const rows=pick.filter(([k])=>t[k]).map(([k,l])=>`<div class="row"><span class="lbl">${l}</span><span class="val">${fmtTime(t[k])}</span></div>`).join("");
+    if(rows){ zc.classList.remove("hidden"); zEl.innerHTML=rows; }
+    else zc.classList.add("hidden");
+  } else zc.classList.add("hidden");
+}
+
+/* ---------- content loading ---------- */
+async function loadContent(){
+  try{
+    const r=await fetch(CONTENT_URL+"?t="+Date.now(), {cache:"no-store"});
+    if(r.ok){
+      const j=await r.json();
+      if(j && typeof j==="object") content=j;
+    }
+  }catch(e){ /* keep current / embedded default */ }
+  renderAll();
+}
+
+let lastSig="";
+function sig(){ try{ return JSON.stringify(content); }catch(e){ return String(Math.random()); } }
+
+function renderAll(){
+  applyTheme(content.settings&&content.settings.theme);
+  renderHeader();
+  renderSchedule();
+  renderTicker();
+  const s=sig();
+  if(s!==lastSig){ renderStage(); lastSig=s; }   // only rebuild stage when content changed
+}
+
+/* ---------- boot ---------- */
+tickClock();
+setInterval(tickClock, 1000);
+loadContent();
+setInterval(loadContent, CONTENT_REFRESH_MS);
+loadHebcal();
+setInterval(loadHebcal, HEBCAL_REFRESH_MS);
+</script>
+</body>
+</html>
