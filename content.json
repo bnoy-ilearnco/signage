@@ -1,0 +1,44 @@
+{
+  "settings": {
+    "schoolName": "Your School Name",
+    "logoUrl": "",
+    "theme": {
+      "bg": "#0b1220",
+      "panel": "#101a2e",
+      "panel2": "#0d1526",
+      "accent": "#c9a227",
+      "accent2": "#e5c766",
+      "text": "#eef4fb",
+      "muted": "#9fb1c9"
+    },
+    "location": {
+      "label": "Brooklyn, NY",
+      "geonameid": 5110302,
+      "showZmanim": true
+    },
+    "slideSeconds": 12,
+    "showTicker": true
+  },
+  "announcements": [
+    {
+      "kicker": "Welcome",
+      "title": "Welcome back!",
+      "body": "This board is fully editable from the admin page — no code needed.",
+      "until": ""
+    }
+  ],
+  "events": [
+    { "date": "2026-09-20", "time": "7:00 PM", "title": "Open House" }
+  ],
+  "photos": [],
+  "schedule": [
+    { "label": "Shacharis", "time": "7:45 AM" },
+    { "label": "Period 1", "time": "8:30 AM" },
+    { "label": "Lunch", "time": "12:15 PM" },
+    { "label": "Dismissal", "time": "4:15 PM" }
+  ],
+  "ticker": [
+    "Welcome to our school",
+    "Edit these messages from the admin page"
+  ]
+}
